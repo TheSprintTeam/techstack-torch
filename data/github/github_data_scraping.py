@@ -5,7 +5,7 @@ import string
 import re
 
 # Configurable constants
-SECRET_GITHUB_TOKEN = ## Put github token here
+SECRET_GITHUB_TOKEN = ""## Put github token here
 NUM_PROJECTS_TO_SCRAPE = 1000
 # feel free to adjust the query as you see fit (you cant have >5 conditionals but tried my best not fetch irrelevant projects)
 query = 'stars:>1 license:mit NOT "interview questions" NOT "guide" NOT "tutorial" NOT "preparation" NOT "practice"'
