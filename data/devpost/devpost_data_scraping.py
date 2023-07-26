@@ -7,11 +7,12 @@ import re
 import aiohttp
 import requests
 from bs4 import BeautifulSoup
+from tqdm import tqdm
 
 
 # Constants for the number of Devpost URLs to query and maximum concurrent connections
-NUM_URLS_TO_QUERY = 10000
-MAX_CONCURRENT_CONNECTIONS = 5
+NUM_URLS_TO_QUERY = 45000
+MAX_CONCURRENT_CONNECTIONS = 4
 
 
 def get_current_path():
@@ -36,13 +37,12 @@ async def fetch_devpost_urls(session, page_num):
         list: A list of Devpost project URLs for the given page number.
     """
     url = f'https://devpost.com/software/search?page={page_num}'
-    await asyncio.sleep(5)
+    await asyncio.sleep(0.25)
 
     try:
         async with session.get(url) as response:
             data = await response.json()
             projects = data.get('software')
-
         return [project['url'] for project in projects]
     except aiohttp.ContentTypeError as e:
         print(f"ContentTypeError: {e}")
@@ -60,8 +60,11 @@ async def fetch_all_devpost_urls():
         list: A list of lists containing Devpost project URLs for each page.
     """
     async with aiohttp.ClientSession() as session:
-        tasks = [fetch_devpost_urls(session, page_num) for page_num in range(1, NUM_URLS_TO_QUERY + 1)]
-        return await asyncio.gather(*tasks)
+        url_lists = []
+        for page_num in tqdm(range(1, NUM_URLS_TO_QUERY + 1), desc="Fetching URLs", total=NUM_URLS_TO_QUERY):
+            url_list = await fetch_devpost_urls(session, page_num)
+            url_lists.append(url_list)
+    return url_lists
 
 
 async def scrape_project_info(url):
@@ -74,7 +77,7 @@ async def scrape_project_info(url):
     Returns:
         tuple: A tuple containing a boolean indicating success of scraping, description, and technologies used.
     """
-    await asyncio.sleep(5)
+    await asyncio.sleep(0.2)
 
     response = requests.get(url)
     soup = BeautifulSoup(response.text, 'html.parser')
@@ -137,23 +140,25 @@ async def update_csv_with_technologies(output_file):
         successful_scrapes = 0
         failures = 0
 
-        for urls in url_list:
+        semaphore = asyncio.Semaphore(MAX_CONCURRENT_CONNECTIONS)
+        for urls in tqdm(url_list):
             tasks = [scrape_project_info(url) for url in urls]
-            results = await asyncio.gather(*tasks)
+            async with semaphore:
+                results = await asyncio.gather(*tasks)
 
             for url, (is_scraped, description, technologies) in zip(urls, results):
                 total_projects += 1
-                description = re.sub(r'[^\w\s]', '', description).strip()
+                clean_description = re.sub(r'[^\w\s]', '', description).strip()
 
                 # Check if all fields have data before writing the row
-                if all([url, description, technologies]):
+                if all([url, clean_description, technologies]):
                     is_found_all_param = True
                     successful_scrapes += 1
-                    row = {'url': url, 'description': description, 'technologies': ', '.join(technologies)}
+                    row = {'url': url, 'description': clean_description, 'technologies': ', '.join(technologies)}
                     await write_row(writer, row)
                 else:
                     is_found_all_param = False
-                    print(f'url: {url}\tdescription: {description}')
+                    print(f'url: {url}')
                     failures += 1
 
                 print(f"Scraped project {total_projects}: Success={is_found_all_param}")
@@ -167,7 +172,7 @@ async def update_csv_with_technologies(output_file):
 def read_cached_urls(cache_file):
     with open(cache_file, 'rb') as file:
         url_list = pickle.load(file)
-        x = len(url_list[1])
+        x = len(url_list[240])
         y = len(url_list)
         print(f'Used cache file with: {x*y} urls')
     return url_list
@@ -183,7 +188,6 @@ def write_cached_urls(cache_file, url_list):
 
 async def write_row(writer, row):
     await asyncio.to_thread(writer.writerow, row)
-
 
 
 if __name__ == '__main__':
