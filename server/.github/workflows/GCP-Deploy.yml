@@ -39,3 +39,9 @@ jobs:
 
         - name: Deploy Docker image
           run: gcloud run deploy ${{ secrets.GCP_PROJECT_ID }} --image $IMAGE_NAME --region us-central1 --platform managed
+
+        - name: Install dependencies
+          run: docker run -v $PWD:/app -w /app python:3.9 pip install -r requirements.txt
+
+        - name: Run pytest tests
+          run: docker run -v $PWD:/app -w /app python:3.9 pytest
