@@ -17,11 +17,12 @@ def index():
     payload = request.json
     input_description = payload['description']
 
-    processed_input = preprocessing.preprocess_input_text(input_description)
-    embedding = model.generate_sentence_embeddings(processed_input)
+    # processed_input = preprocessing.preprocess_input_text(input_description)
+    # embedding = model.generate_sentence_embeddings(processed_input)
 
-    recommended_technologies = recommender.cosine_similarity_recommendations(input_dataset, embedding)
-
+    # recommended_technologies = recommender.cosine_similarity_recommendations(input_dataset, embedding)
+    recommended_technologies = ['python', 'ansible', 'terraform']
+    
     return jsonify({
         "body": {
             "recommendations": recommended_technologies

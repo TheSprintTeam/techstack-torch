@@ -2,3 +2,6 @@ requests
 flask
 pytest
 torch
+pandas
+transformers
+nltk
