@@ -1,5 +1,4 @@
 
-import torch
 from nltk.tokenize import word_tokenize
 
 
