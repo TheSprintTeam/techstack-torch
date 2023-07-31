@@ -4,8 +4,7 @@ Web server that runs to generate recommendations from current model.
 
 from flask import Flask, request, jsonify
 
-from model_v0 import model, preprocessing, recommender
-
+from .model_v0 import model, preprocessing, recommender
 
 app = Flask(__name__)
 
