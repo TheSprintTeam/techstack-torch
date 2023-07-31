@@ -4,6 +4,8 @@ Web server that runs to generate recommendations from current model.
 
 from flask import Flask, request, jsonify
 
+from model_v0 import model, preprocessing, recommender
+
 
 app = Flask(__name__)
 
@@ -12,14 +14,17 @@ def index():
     """
     Main entrypoint into server. 
     """
-    # Get the JSON payload from the request
     payload = request.json
+    input_description = payload['description']
 
-    recommendations = ["python", "ansible", "docker"]
+    processed_input = preprocessing.preprocess_input_text(input_description)
+    embedding = model.generate_sentence_embeddings(processed_input)
+
+    recommended_technologies = recommender.cosine_similarity_recommendations(input_dataset, embedding)
 
     return jsonify({
         "body": {
-            "recommendations": recommendations
+            "recommendations": recommended_technologies
         }
     })
 
