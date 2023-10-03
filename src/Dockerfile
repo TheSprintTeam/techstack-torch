@@ -10,6 +10,8 @@ COPY requirements.txt .
 # Install the Python dependencies
 RUN pip install --no-cache-dir -r requirements.txt
 
+RUN python -m nltk.downloader punkt
+
 # Copy the entire application code to the container's working directory
 COPY . .
 
