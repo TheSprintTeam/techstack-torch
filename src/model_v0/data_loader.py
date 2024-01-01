@@ -22,6 +22,13 @@ def _load_recommendations_dataframe(hdf5_file_path: str) -> pd.DataFrame:
         df = pd.DataFrame(data)
         embeddings_list = [embeddings for embeddings in h5_file['embeddings']]
         df[EMBEDDINGS_COLUMN_NAME] = embeddings_list
+
+        for key in h5_file.keys():
+        # Check if the column contains byte data
+            if key in ['technologies', 'url']:
+                df[key] = [x.decode() for x in h5_file[key]]
+            else:
+                df[key] = h5_file[key][:]
     return df
 
 
